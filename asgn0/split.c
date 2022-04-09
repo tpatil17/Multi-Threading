@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     char *delim = argv[1];
 
-    char buffer[2];
+    char buffer[100];
 
     i++;
     while (i < argc) {
@@ -47,11 +47,12 @@ int main(int argc, char *argv[]) {
             errx(2, "split: %s: No such file or directory", argv[i]);
         }
 
-        while ((red = read(fd, buffer, 1)) > 0) {
+        while ((red = read(fd, buffer, 99)) > 0) {
 
-
-            if (buffer[0] == delim[0]) {
-                buffer[0] = '\n';
+            for(int ctr =0 ; ctr < red ; ctr++){
+                if (buffer[ctr] == delim[0]) {
+                    buffer[ctr] = '\n';
+                }
             }
 
             buffer[red] = '\0';
