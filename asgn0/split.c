@@ -1,22 +1,24 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
 #include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
 
     // not enough arguments
     if (argc < 3) {
 
-        errx(22, "Not enough arguments\nusage: ./split: <split_char> [<file1> <file2> ...]");
+        errx(22, "Not enough arguments\nusage: ./split: <split_char> [<file1> "
+                 "<file2> ...]");
     }
 
     if (strlen(argv[1]) > 1) {
 
         errx(22,
-            "Cannot handle multi-character splits: %s\nusage: ./split: <split_char> [<file1> "
+            "Cannot handle multi-character splits: %s\nusage: ./split: "
+            "<split_char> [<file1> "
             "<file2> ...]",
             argv[1]);
     }
@@ -49,7 +51,7 @@ int main(int argc, char *argv[]) {
 
         while ((red = read(fd, buffer, 99)) > 0) {
 
-            for(int ctr =0 ; ctr < red ; ctr++){
+            for (int ctr = 0; ctr < red; ctr++) {
                 if (buffer[ctr] == delim[0]) {
                     buffer[ctr] = '\n';
                 }
