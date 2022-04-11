@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
             char buffer_2[1024];
 
-            while ((red = read(fd, buffer_2, 1024)) > 0) {
+            while ((red = read(fd, buffer_2, 1023)) > 0) {
 
                 for (int ctr = 0; ctr < red; ctr++) {
                     if (buffer_2[ctr] == delim[0]) {
