@@ -143,6 +143,44 @@ int main(int argc, char *argv[]) {
             errx(2, "split: %s: No such file or directory", argv[i]);
         }
 
+// When input is stdin
+
+
+        if(fd == 0){
+
+        char buffer_2[100]; 
+
+        while ((red = read(fd, buffer_2, 99)) > 0) {
+
+            for (int ctr = 0; ctr < red; ctr++) {
+                if (buffer_2[ctr] == delim[0]) {
+                    buffer_2[ctr] = '\n';
+                }
+            }
+
+            buffer_2[red] = '\0';
+
+            if ((write(STDOUT_FILENO, buffer_2, red)) == -1) {
+                perror("write");
+                exit(1);
+            }
+
+            if (red == -1) {
+                perror("read");
+                exit(1);
+            }
+        }
+
+        if (close(fd) == -1) {
+            perror("close");
+            exit(1);
+        }
+        }
+
+        // other cases
+
+        else{
+
         fstat(fd, &buf);
 
         bytes_exp = buf.st_size;
@@ -180,10 +218,10 @@ int main(int argc, char *argv[]) {
         }
 
         free(buffer);
+        }
 
         i++;
     }
 
     return 0;
 }
-
