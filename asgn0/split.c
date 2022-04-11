@@ -59,9 +59,9 @@ int main(int argc, char *argv[]) {
 
         if (fd == 0) {
 
-            char buffer_2[100];
+            char buffer_2[1024];
 
-            while ((red = read(fd, buffer_2, 99)) > 0) {
+            while ((red = read(fd, buffer_2, 1024)) > 0) {
 
                 for (int ctr = 0; ctr < red; ctr++) {
                     if (buffer_2[ctr] == delim[0]) {
