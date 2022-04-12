@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
         if (fd == -1) {
 
-            warn("split: %s: No such file or directory", argv[i]);
+            warnx("split: %s: No such file or directory", argv[i], 2);
         }
 
         while ((red = read(fd, buffer, 2043)) > 0) {
@@ -70,10 +70,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (close(fd) == -1) {
-            perror("close");
-            exit(1);
-        }
+        close(fd);
+        
 
         i++;
     }
