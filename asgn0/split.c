@@ -76,12 +76,11 @@ int main(int argc, char *argv[]) {
         }
 
         close(fd);
-        
 
         i++;
     }
 
-    if(invalid == 1){
+    if (invalid == 1) {
         return 2;
     }
 
