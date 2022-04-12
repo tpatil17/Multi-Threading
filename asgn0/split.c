@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
 
     int i = 1;
 
+    int invalid = 0;
+
     int red;
 
     char *delim = argv[1];
@@ -46,7 +48,10 @@ int main(int argc, char *argv[]) {
 
         if (fd == -1) {
 
-            warnx("split: %s: No such file or directory", argv[i], 2);
+            warnx("%s: No such file or directory", argv[i]);
+            invalid = 1;
+            i++;
+            continue;
         }
 
         while ((red = read(fd, buffer, 2043)) > 0) {
@@ -74,6 +79,10 @@ int main(int argc, char *argv[]) {
         
 
         i++;
+    }
+
+    if(invalid == 1){
+        return 2;
     }
 
     return 0;
