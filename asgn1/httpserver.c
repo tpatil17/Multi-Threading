@@ -298,7 +298,7 @@ void handle_connection(int connfd) {
 
     strcpy(res.version, "HTTP/1.1");
 
-    if (strcmp(method, "GET") == 0) {
+    if (strcmp(method, "GET") == 0 | strcmp(method, "get") == 0) {
 
       res.status_code = 200;
       strcpy(res.status_phrase, "OK");
@@ -308,7 +308,7 @@ void handle_connection(int connfd) {
       return;
     }
 
-    if (strcmp(method, "PUT") == 0) {
+    if (strcmp(method, "PUT") == 0 | strcmp(method, "put") == 0) {
 
       int offset;
 
@@ -330,7 +330,7 @@ void handle_connection(int connfd) {
       return;
     }
 
-    if (strcmp(method, "APPEND") == 0) {
+    if (strcmp(method, "APPEND") == 0 | strcmp(method, "append") == 0) {
 
       int offset;
 
