@@ -70,12 +70,30 @@ void Get(char file[], int connfd, struct Response res) {
 
   struct stat ln;
 
+  stat(file, &ln);
+
   if (access(file, F_OK) != 0) {
 
     res.status_code = 404;
-    strcpy(res.status_phrase, "Not Found");
+    strcpy(res.status_phrase, "File Not Found");
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "File Not Found\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buf, strlen(resp_buf));
+    return;
+  }
+
+  stat(file, &ln);
+
+  if (S_ISREG(ln.st_mode) == 0) {
+
+    res.status_code = 403;
+    strcpy(res.status_phrase, "Forbidden");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Forbidden\n");
     res.length = strlen(res.message);
     sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
@@ -92,8 +110,6 @@ void Get(char file[], int connfd, struct Response res) {
     exit(1);
   }
 
-  stat(file, &ln);
-
   res.length = ln.st_size;
 
   sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n", res.version, res.status_code,
@@ -102,7 +118,31 @@ void Get(char file[], int connfd, struct Response res) {
   write(connfd, resp_buf, strlen(resp_buf));
   while ((bytes_read = read(fd, resp_buf, 1024)) > 0) {
 
-    write(connfd, resp_buf, bytes_read);
+    if ((write(connfd, resp_buf, bytes_read)) == -1) {
+      res.status_code = 500;
+      strcpy(res.status_phrase, "Internal Server Error");
+      strcpy(res.header, "Content-Length");
+      strcpy(res.message, "Internal Server Error\n");
+      res.length = strlen(res.message);
+      sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+              res.status_code, res.status_phrase, res.header, res.length,
+              res.message);
+      write(connfd, resp_buf, strlen(resp_buf));
+      return;
+    }
+  }
+
+  if (bytes_read == -1) {
+    res.status_code = 500;
+    strcpy(res.status_phrase, "Internal Server Error");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Internal Server Error\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buf, strlen(resp_buf));
+    return;
   }
 
   close(fd);
@@ -122,7 +162,41 @@ void Put(char file[], int connfd, struct Response res, char parser[],
 
   limit = res.length;
 
+  char resp_buffer[1024];
+
+  struct stat ln;
+
+  stat(file, &ln);
+
+  if (S_ISDIR(ln.st_mode) != 0) {
+
+    res.status_code = 403;
+    strcpy(res.status_phrase, "Forbidden");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Forbidden\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buffer, strlen(resp_buffer));
+    return;
+  }
+
   if (access(file, F_OK) == 0) {
+
+    if (S_ISREG(ln.st_mode) == 0) {
+
+      res.status_code = 403;
+      strcpy(res.status_phrase, "Forbidden");
+      strcpy(res.header, "Content-Length");
+      strcpy(res.message, "Forbidden\n");
+      res.length = strlen(res.message);
+      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+              res.status_code, res.status_phrase, res.header, res.length,
+              res.message);
+      write(connfd, resp_buffer, strlen(resp_buffer));
+      return;
+    }
 
     fd = open(file, O_WRONLY | O_TRUNC);
 
@@ -134,7 +208,7 @@ void Put(char file[], int connfd, struct Response res, char parser[],
     strcpy(res.message, "OK\n");
   }
 
-  else {
+  if (access(file, F_OK) != 0) {
 
     fd = open(file, O_WRONLY | O_CREAT, 0644);
 
@@ -146,19 +220,17 @@ void Put(char file[], int connfd, struct Response res, char parser[],
     strcpy(res.message, "Created\n");
   }
 
-  char resp_buffer[1024];
-
   sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
           res.status_code, res.status_phrase, res.header, res.length,
           res.message);
-
   write(connfd, resp_buffer, strlen(resp_buffer));
 
   if (limit < (4096 - offset)) {
     write(fd, parser + offset, limit);
     close(fd);
+  }
 
-  } else {
+  else {
     int total;
 
     write(fd, parser + offset, strlen(parser) - offset);
@@ -180,6 +252,19 @@ void Put(char file[], int connfd, struct Response res, char parser[],
       }
     }
 
+    if (bytes == -1) {
+      res.status_code = 500;
+      strcpy(res.status_phrase, "Internal Server Error");
+      strcpy(res.header, "Content-Length");
+      strcpy(res.message, "Internal Server Error\n");
+      res.length = strlen(res.message);
+      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+              res.status_code, res.status_phrase, res.header, res.length,
+              res.message);
+      write(connfd, resp_buffer, strlen(resp_buffer));
+      return;
+    }
+
     close(fd);
   }
 
@@ -196,6 +281,8 @@ void Append(char file[], int connfd, struct Response res, char parser[],
   long limit;
 
   limit = res.length;
+
+  struct stat ln;
 
   char resp_buffer[1024];
 
@@ -215,6 +302,20 @@ void Append(char file[], int connfd, struct Response res, char parser[],
     return;
   }
 
+  stat(file, &ln);
+
+  if (S_ISREG(ln.st_mode) == 0) {
+    res.status_code = 403;
+    strcpy(res.status_phrase, "Forbidden");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Forbidden\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buffer, strlen(resp_buffer));
+    return;
+  }
   fd = open(file, O_WRONLY | O_APPEND);
 
   if (fd == -1) {
@@ -260,6 +361,18 @@ void Append(char file[], int connfd, struct Response res, char parser[],
         break;
       }
     }
+    if (bytes == -1) {
+      res.status_code = 500;
+      strcpy(res.status_phrase, "Internal Server Error");
+      strcpy(res.header, "Content-Length");
+      strcpy(res.message, "Internal Server Error\n");
+      res.length = strlen(res.message);
+      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+              res.status_code, res.status_phrase, res.header, res.length,
+              res.message);
+      write(connfd, resp_buffer, strlen(resp_buffer));
+      return;
+    }
 
     close(fd);
   }
@@ -283,12 +396,13 @@ void handle_connection(int connfd) {
 
   if ((count = sscanf(parser, "%s /%s %s\r\n", method, url, version)) != 3) {
 
+    strcpy(res.version, "HTTP/1.1");
     res.status_code = 400;
     strcpy(res.status_phrase, "Bad Request");
     strcpy(res.header, "Content-Length");
     res.length = 12;
-    sprintf(buff_res, "HTTP/1.1 %d %s\r\n%s: %ld\r\n\r\n", res.status_code,
-            res.status_phrase, res.header, res.length);
+    sprintf(buff_res, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version,
+            res.status_code, res.status_phrase, res.header, res.length);
     write(connfd, buff_res, strlen(buff_res));
     write(connfd, "Bad Request\n", 12);
 
