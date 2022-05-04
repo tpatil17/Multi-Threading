@@ -243,11 +243,36 @@ void Put(char file[], int connfd, struct Response res, char parser[],
 
       if (limit >= total) {
 
-        write(fd, parser, bytes);
+        if (write(fd, parser, bytes) == -1) {
 
-      } else {
+          res.status_code = 500;
+          strcpy(res.status_phrase, "Internal Server Error");
+          strcpy(res.header, "Content-Length");
+          strcpy(res.message, "Internal Server Error\n");
+          res.length = strlen(res.message);
+          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+                  res.status_code, res.status_phrase, res.header, res.length,
+                  res.message);
+          write(connfd, resp_buffer, strlen(resp_buffer));
+          return;
+        }
+      }
 
-        write(fd, parser, bytes - (total - limit));
+      else {
+
+        if (write(fd, parser, bytes - (total - limit)) == -1) {
+
+          res.status_code = 500;
+          strcpy(res.status_phrase, "Internal Server Error");
+          strcpy(res.header, "Content-Length");
+          strcpy(res.message, "Internal Server Error\n");
+          res.length = strlen(res.message);
+          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+                  res.status_code, res.status_phrase, res.header, res.length,
+                  res.message);
+          write(connfd, resp_buffer, strlen(resp_buffer));
+          return;
+        }
         break;
       }
     }
@@ -353,11 +378,35 @@ void Append(char file[], int connfd, struct Response res, char parser[],
       total += bytes;
 
       if (limit >= total) {
-        write(fd, parser, bytes);
+        if (write(fd, parser, bytes) == -1) {
+
+          res.status_code = 500;
+          strcpy(res.status_phrase, "Internal Server Error");
+          strcpy(res.header, "Content-Length");
+          strcpy(res.message, "Internal Server Error\n");
+          res.length = strlen(res.message);
+          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+                  res.status_code, res.status_phrase, res.header, res.length,
+                  res.message);
+          write(connfd, resp_buffer, strlen(resp_buffer));
+          return;
+        }
 
       } else {
 
-        write(fd, parser, bytes - (total - limit));
+        if (write(fd, parser, bytes - (total - limit)) == -1) {
+
+          res.status_code = 500;
+          strcpy(res.status_phrase, "Internal Server Error");
+          strcpy(res.header, "Content-Length");
+          strcpy(res.message, "Internal Server Error\n");
+          res.length = strlen(res.message);
+          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+                  res.status_code, res.status_phrase, res.header, res.length,
+                  res.message);
+          write(connfd, resp_buffer, strlen(resp_buffer));
+          return;
+        }
         break;
       }
     }
