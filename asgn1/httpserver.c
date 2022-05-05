@@ -107,19 +107,35 @@ struct Request process_request(char read_buffer[], int connfd) {
 
   if ((check = sscanf(buffer, "%s /%s %s %n", req.method, req.uri, req.version,
                       &req.offset)) != 3) {
-    printf("%d\n", check);
-    strcpy(res.version, "HTTP/1.1");
-    res.status_code = 400;
-    strcpy(res.status_phrase, "Bad Request");
-    strcpy(res.header, "Content-Length");
-    res.length = 12;
-    sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+
+    if(strcmp(req.version, "") == 0){
+
+      strcpy(res.version, "HTTP/1.1");
+      res.status_code = 404;
+      strcpy(res.status_phrase, "File Not Found");
+      strcpy(res.header, "Content-Length");
+      res.length = strlen(res.status_phrase) + 1;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
             res.status_phrase, res.header, res.length);
-    write(connfd, buffer, strlen(buffer));
-    write(connfd, "Bad Request\n", 12);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "File Not Found\n", 15);
 
+    }
+
+    else{
+      strcpy(res.version, "HTTP/1.1");
+      res.status_code = 400;
+      strcpy(res.status_phrase, "Bad Request");
+      strcpy(res.header, "Content-Length");
+      res.length = 12;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+            res.status_phrase, res.header, res.length);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "Bad Request\n", 12);
+
+    }
     req.er_flg = 1;
-
+    
     return req;
   }
 
@@ -142,6 +158,22 @@ struct Request process_request(char read_buffer[], int connfd) {
 
       strcpy(perm_header, req.header);
 
+      if(strcmp(req.value, "") == 0){
+        strcpy(res.version, "HTTP/1.1");
+      res.status_code = 400;
+      strcpy(res.status_phrase, "Bad Request");
+      strcpy(res.header, "Content-Length");
+      res.length = 12;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+            res.status_phrase, res.header, res.length);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "Bad Request\n", 12);
+
+      req.er_flg =1;
+
+      return req; // bad request
+      }
+
       strcpy(perm_val, req.value);
     }
     strcpy(req.header, "");
@@ -151,13 +183,14 @@ struct Request process_request(char read_buffer[], int connfd) {
     token = strtok(NULL, delim);
 
     total += req.offset;
+
   }
 
   strcpy(req.header, perm_header);
 
   strcpy(req.value, perm_val);
 
-  req.offset = total;
+  req.offset = total + 4;
 
   req.length = atoi(perm_val);
 
@@ -187,7 +220,7 @@ void Get(struct Request req, int connfd, struct Response res) {
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "File Not Found\n");
     res.length = strlen(res.message);
-    sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+    sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buf, strlen(resp_buf));
@@ -201,11 +234,26 @@ void Get(struct Request req, int connfd, struct Response res) {
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "Forbidden\n");
     res.length = strlen(res.message);
-    sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+    sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buf, strlen(resp_buf));
     return;
+  }
+  
+  if(access(req.uri, R_OK) != 0){
+
+    res.status_code = 403;
+    strcpy(res.status_phrase, "Forbidden");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Forbidden\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buf, strlen(resp_buf));
+    return;
+
   }
 
   fd = open(req.uri, O_RDONLY);
@@ -231,7 +279,7 @@ void Get(struct Request req, int connfd, struct Response res) {
       strcpy(res.header, "Content-Length");
       strcpy(res.message, "Internal Server Error\n");
       res.length = strlen(res.message);
-      sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+      sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buf, strlen(resp_buf));
@@ -246,7 +294,7 @@ void Get(struct Request req, int connfd, struct Response res) {
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "Internal Server Error\n");
     res.length = strlen(res.message);
-    sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+    sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buf, strlen(resp_buf));
@@ -285,7 +333,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "Forbidden\n");
     res.length = strlen(res.message);
-    sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+    sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buffer, strlen(resp_buffer));
@@ -301,7 +349,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
       strcpy(res.header, "Content-Length");
       strcpy(res.message, "Forbidden\n");
       res.length = strlen(res.message);
-      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+      sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buffer, strlen(resp_buffer));
@@ -355,7 +403,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           strcpy(res.header, "Content-Length");
           strcpy(res.message, "Internal Server Error\n");
           res.length = strlen(res.message);
-          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+          sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
@@ -373,7 +421,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           strcpy(res.header, "Content-Length");
           strcpy(res.message, "Internal Server Error\n");
           res.length = strlen(res.message);
-          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+          sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
@@ -390,7 +438,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
       strcpy(res.header, "Content-Length");
       strcpy(res.message, "Internal Server Error\n");
       res.length = strlen(res.message);
-      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+      sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buffer, strlen(resp_buffer));
@@ -456,12 +504,25 @@ void Append(struct Request req, int connfd, struct Response res,
     strcpy(res.header, "Content-Length");
     strcpy(res.message, "Forbidden\n");
     res.length = strlen(res.message);
-    sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+    sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buffer, strlen(resp_buffer));
     return;
   }
+  if(access(req.uri, W_OK) != 0){
+    res.status_code = 403;
+    strcpy(res.status_phrase, "Forbidden");
+    strcpy(res.header, "Content-Length");
+    strcpy(res.message, "Forbidden\n");
+    res.length = strlen(res.message);
+    sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
+            res.status_code, res.status_phrase, res.header, res.length,
+            res.message);
+    write(connfd, resp_buffer, strlen(resp_buffer));
+    return;
+  }
+  
   fd = open(req.uri, O_WRONLY | O_APPEND);
 
   if (fd == -1) {
@@ -500,7 +561,7 @@ void Append(struct Request req, int connfd, struct Response res,
           strcpy(res.header, "Content-Length");
           strcpy(res.message, "Internal Server Error\n");
           res.length = strlen(res.message);
-          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+          sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
@@ -517,7 +578,7 @@ void Append(struct Request req, int connfd, struct Response res,
           strcpy(res.header, "Content-Length");
           strcpy(res.message, "Internal Server Error\n");
           res.length = strlen(res.message);
-          sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+          sprintf(resp_buffer, "%s %d %s\r\n%s:% ld\r\n\r\n%s", res.version,
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
@@ -533,7 +594,7 @@ void Append(struct Request req, int connfd, struct Response res,
       strcpy(res.header, "Content-Length");
       strcpy(res.message, "Internal Server Error\n");
       res.length = strlen(res.message);
-      sprintf(resp_buffer, "%s %d %s\r\n%s:%ld\r\n\r\n%s", res.version,
+      sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buffer, strlen(resp_buffer));
@@ -572,7 +633,9 @@ void handle_connection(int connfd) {
 
   req = process_request(parser, connfd);
 
+
   if (req.er_flg == 1) {
+
     return;
   }
 
@@ -585,7 +648,6 @@ void handle_connection(int connfd) {
     res.status_code = 200;
     strcpy(res.status_phrase, "OK");
     strcpy(res.header, "Content-Length");
-
     strcpy(res.version, req.version);
 
     Get(req, connfd, res);
