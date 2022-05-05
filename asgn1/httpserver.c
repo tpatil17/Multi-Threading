@@ -48,7 +48,9 @@ int create_listen_socket(uint16_t port) {
   }
   return listenfd;
 }
+/* Structs required for precessing requests and producing responses*/
 
+// ******************************************************************
 struct Response {
   char version[24];
   int status_code;
@@ -58,9 +60,115 @@ struct Response {
   char message[64];
 };
 
+struct Request {
+  char method[10];
+
+  char uri[19];
+
+  char version[25];
+
+  char header[50];
+
+  char value[10];
+
+  int length;
+
+  int offset;
+
+  int er_flg;
+};
+
+// *********************** Request Processing *********************
+
+struct Request process_request(char read_buffer[], int connfd) {
+
+  char buffer[1024];
+  struct Request req;
+
+  struct Response res;
+
+  const char delim[2] = "\n";
+
+  char *token;
+
+  int total = 0;
+
+  char perm_header[25];
+
+  char perm_val[24];
+
+  int check;
+
+  req.er_flg = 0;
+
+  token = strtok(read_buffer, delim);
+
+  strcpy(buffer, token);
+
+  if ((check = sscanf(buffer, "%s /%s %s %n", req.method, req.uri, req.version,
+                      &req.offset)) != 3) {
+    printf("%d\n", check);
+    strcpy(res.version, "HTTP/1.1");
+    res.status_code = 400;
+    strcpy(res.status_phrase, "Bad Request");
+    strcpy(res.header, "Content-Length");
+    res.length = 12;
+    sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+            res.status_phrase, res.header, res.length);
+    write(connfd, buffer, strlen(buffer));
+    write(connfd, "Bad Request\n", 12);
+
+    req.er_flg = 1;
+
+    return req;
+  }
+
+  token = strtok(NULL, delim);
+
+  total = req.offset;
+
+  while (token != NULL) {
+
+    strcpy(buffer, token);
+
+    sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
+
+    if (strcmp(req.header, "") == 0 && strcmp(req.value, "") == 0) {
+
+      break;
+    }
+
+    if (strcmp(req.header, "Content-Length:") == 0) {
+
+      strcpy(perm_header, req.header);
+
+      strcpy(perm_val, req.value);
+    }
+    strcpy(req.header, "");
+
+    strcpy(req.value, "");
+
+    token = strtok(NULL, delim);
+
+    total += req.offset;
+  }
+
+  strcpy(req.header, perm_header);
+
+  strcpy(req.value, perm_val);
+
+  req.offset = total;
+
+  req.length = atoi(perm_val);
+
+  return req;
+}
+//******************************************************************
 // Function implementations -- GET --
 
-void Get(char file[], int connfd, struct Response res) {
+// *****************************************************************
+
+void Get(struct Request req, int connfd, struct Response res) {
 
   char resp_buf[1024];
 
@@ -70,9 +178,9 @@ void Get(char file[], int connfd, struct Response res) {
 
   struct stat ln;
 
-  stat(file, &ln);
+  stat(req.uri, &ln);
 
-  if (access(file, F_OK) != 0) {
+  if (access(req.uri, F_OK) != 0) {
 
     res.status_code = 404;
     strcpy(res.status_phrase, "File Not Found");
@@ -85,8 +193,6 @@ void Get(char file[], int connfd, struct Response res) {
     write(connfd, resp_buf, strlen(resp_buf));
     return;
   }
-
-  stat(file, &ln);
 
   if (S_ISREG(ln.st_mode) == 0) {
 
@@ -102,7 +208,7 @@ void Get(char file[], int connfd, struct Response res) {
     return;
   }
 
-  fd = open(file, O_RDONLY);
+  fd = open(req.uri, O_RDONLY);
 
   if (fd == -1) {
 
@@ -116,6 +222,7 @@ void Get(char file[], int connfd, struct Response res) {
           res.status_phrase, res.header, res.length);
 
   write(connfd, resp_buf, strlen(resp_buf));
+
   while ((bytes_read = read(fd, resp_buf, 1024)) > 0) {
 
     if ((write(connfd, resp_buf, bytes_read)) == -1) {
@@ -128,6 +235,7 @@ void Get(char file[], int connfd, struct Response res) {
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buf, strlen(resp_buf));
+      close(fd);
       return;
     }
   }
@@ -142,17 +250,17 @@ void Get(char file[], int connfd, struct Response res) {
             res.status_code, res.status_phrase, res.header, res.length,
             res.message);
     write(connfd, resp_buf, strlen(resp_buf));
+    close(fd);
     return;
   }
 
   close(fd);
   return;
 }
-
+//******************************************************************
 // Function implementation --- PUT ---
-
-void Put(char file[], int connfd, struct Response res, char parser[],
-         int offset) {
+//*******************************************************************
+void Put(struct Request req, int connfd, struct Response res, char parser[]) {
 
   int bytes;
 
@@ -160,13 +268,15 @@ void Put(char file[], int connfd, struct Response res, char parser[],
 
   long limit;
 
+  res.length = req.length;
+
   limit = res.length;
 
   char resp_buffer[1024];
 
   struct stat ln;
 
-  stat(file, &ln);
+  stat(req.uri, &ln);
 
   if (S_ISDIR(ln.st_mode) != 0) {
 
@@ -182,7 +292,7 @@ void Put(char file[], int connfd, struct Response res, char parser[],
     return;
   }
 
-  if (access(file, F_OK) == 0) {
+  if (access(req.uri, F_OK) == 0) {
 
     if (S_ISREG(ln.st_mode) == 0) {
 
@@ -198,7 +308,7 @@ void Put(char file[], int connfd, struct Response res, char parser[],
       return;
     }
 
-    fd = open(file, O_WRONLY | O_TRUNC);
+    fd = open(req.uri, O_WRONLY | O_TRUNC);
 
     res.status_code = 200;
     strcpy(res.status_phrase, "OK");
@@ -208,9 +318,9 @@ void Put(char file[], int connfd, struct Response res, char parser[],
     strcpy(res.message, "OK\n");
   }
 
-  if (access(file, F_OK) != 0) {
+  if (access(req.uri, F_OK) != 0) {
 
-    fd = open(file, O_WRONLY | O_CREAT, 0644);
+    fd = open(req.uri, O_WRONLY | O_CREAT, 0644);
 
     res.status_code = 201;
     strcpy(res.status_phrase, "Created");
@@ -220,22 +330,17 @@ void Put(char file[], int connfd, struct Response res, char parser[],
     strcpy(res.message, "Created\n");
   }
 
-  sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
-          res.status_code, res.status_phrase, res.header, res.length,
-          res.message);
-  write(connfd, resp_buffer, strlen(resp_buffer));
-
-  if (limit < (4096 - offset)) {
-    write(fd, parser + offset, limit);
+  if (limit < (4096 - req.offset)) {
+    write(fd, parser + req.offset, limit);
     close(fd);
   }
 
   else {
     int total;
 
-    write(fd, parser + offset, strlen(parser) - offset);
+    write(fd, parser + req.offset, strlen(parser) - req.offset);
 
-    total = strlen(parser) - offset;
+    total = strlen(parser) - req.offset;
 
     while ((bytes = read(connfd, parser, 4096)) > 0) {
 
@@ -254,6 +359,7 @@ void Put(char file[], int connfd, struct Response res, char parser[],
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
+          close(fd);
           return;
         }
       }
@@ -271,6 +377,7 @@ void Put(char file[], int connfd, struct Response res, char parser[],
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
+          close(fd);
           return;
         }
         break;
@@ -287,17 +394,29 @@ void Put(char file[], int connfd, struct Response res, char parser[],
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buffer, strlen(resp_buffer));
+      close(fd);
       return;
     }
 
     close(fd);
   }
 
+  // Write the formal response
+
+  sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
+          res.status_code, res.status_phrase, res.header, res.length,
+          res.message);
+  write(connfd, resp_buffer, strlen(resp_buffer));
+
   return;
 }
+//******************************************************************
 
-void Append(char file[], int connfd, struct Response res, char parser[],
-            int offset) {
+//-------- Implementing Append function -----
+
+//*******************************************************************
+void Append(struct Request req, int connfd, struct Response res,
+            char parser[]) {
 
   int bytes;
 
@@ -305,13 +424,15 @@ void Append(char file[], int connfd, struct Response res, char parser[],
 
   long limit;
 
+  res.length = req.length;
+
   limit = res.length;
 
   struct stat ln;
 
   char resp_buffer[1024];
 
-  if (access(file, F_OK) != 0) {
+  if (access(req.uri, F_OK) != 0) {
 
     res.status_code = 404;
     strcpy(res.status_phrase, "File Not Found");
@@ -327,7 +448,7 @@ void Append(char file[], int connfd, struct Response res, char parser[],
     return;
   }
 
-  stat(file, &ln);
+  stat(req.uri, &ln);
 
   if (S_ISREG(ln.st_mode) == 0) {
     res.status_code = 403;
@@ -341,7 +462,7 @@ void Append(char file[], int connfd, struct Response res, char parser[],
     write(connfd, resp_buffer, strlen(resp_buffer));
     return;
   }
-  fd = open(file, O_WRONLY | O_APPEND);
+  fd = open(req.uri, O_WRONLY | O_APPEND);
 
   if (fd == -1) {
 
@@ -356,22 +477,16 @@ void Append(char file[], int connfd, struct Response res, char parser[],
   strcpy(res.version, "HTTP/1.1");
   strcpy(res.message, "OK\n");
 
-  sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
-          res.status_code, res.status_phrase, res.header, res.length,
-          res.message);
-
-  write(connfd, resp_buffer, strlen(resp_buffer));
-
-  if (limit < (4096 - offset)) {
-    write(fd, parser + offset, limit);
+  if (limit < (4096 - req.offset)) {
+    write(fd, parser + req.offset, limit);
     close(fd);
 
   } else {
     int total;
 
-    write(fd, parser + offset, strlen(parser) - offset);
+    write(fd, parser + req.offset, strlen(parser) - req.offset);
 
-    total = strlen(parser) - offset;
+    total = strlen(parser) - req.offset;
 
     while ((bytes = read(connfd, parser, 4096)) > 0) {
 
@@ -389,6 +504,7 @@ void Append(char file[], int connfd, struct Response res, char parser[],
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
+          close(fd);
           return;
         }
 
@@ -405,6 +521,7 @@ void Append(char file[], int connfd, struct Response res, char parser[],
                   res.status_code, res.status_phrase, res.header, res.length,
                   res.message);
           write(connfd, resp_buffer, strlen(resp_buffer));
+          close(fd);
           return;
         }
         break;
@@ -420,112 +537,87 @@ void Append(char file[], int connfd, struct Response res, char parser[],
               res.status_code, res.status_phrase, res.header, res.length,
               res.message);
       write(connfd, resp_buffer, strlen(resp_buffer));
+      close(fd);
       return;
     }
 
     close(fd);
   }
 
+  sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
+          res.status_code, res.status_phrase, res.header, res.length,
+          res.message);
+
+  write(connfd, resp_buffer, strlen(resp_buffer));
+
   return;
 }
+
+//*************************************************************
+
+// ---- Handle Connection --------------------------------
+
+//*************************************************************
 
 void handle_connection(int connfd) {
   // make the compiler not complain
   char parser[4096];
-  int count = 0;
 
   struct Response res;
+
+  struct Request req;
+
   // get the method
   read(connfd, parser, 4096);
 
-  char method[8];
-  char url[19], version[10];
+  req = process_request(parser, connfd);
+
+  if (req.er_flg == 1) {
+    return;
+  }
 
   char buff_res[1024];
 
-  if ((count = sscanf(parser, "%s /%s %s\r\n", method, url, version)) != 3) {
+  strcpy(res.version, "HTTP/1.1");
 
-    strcpy(res.version, "HTTP/1.1");
-    res.status_code = 400;
-    strcpy(res.status_phrase, "Bad Request");
+  if (strcmp(req.method, "GET") == 0 | strcmp(req.method, "get") == 0) {
+
+    res.status_code = 200;
+    strcpy(res.status_phrase, "OK");
     strcpy(res.header, "Content-Length");
-    res.length = 12;
-    sprintf(buff_res, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version,
-            res.status_code, res.status_phrase, res.header, res.length);
-    write(connfd, buff_res, strlen(buff_res));
-    write(connfd, "Bad Request\n", 12);
 
+    strcpy(res.version, req.version);
+
+    Get(req, connfd, res);
+    return;
+  }
+
+  if (strcmp(req.method, "PUT") == 0 | strcmp(req.method, "put") == 0) {
+
+    strcpy(res.version, req.version);
+
+    Put(req, connfd, res, parser);
+    return;
+  }
+
+  if (strcmp(req.method, "APPEND") == 0 | strcmp(req.method, "append") == 0) {
+
+    strcpy(res.version, req.version);
+
+    Append(req, connfd, res, parser);
+    return;
   }
 
   else {
-
-    strcpy(res.version, "HTTP/1.1");
-
-    if (strcmp(method, "GET") == 0 | strcmp(method, "get") == 0) {
-
-      res.status_code = 200;
-      strcpy(res.status_phrase, "OK");
-      strcpy(res.header, "Content-Length");
-
-      Get(url, connfd, res);
-      return;
-    }
-
-    if (strcmp(method, "PUT") == 0 | strcmp(method, "put") == 0) {
-
-      int offset;
-
-      if (sscanf(parser, "%s /%s %s %s %ld %n", method, url, version,
-                 res.header, &res.length, &offset) != 5) {
-
-        res.status_code = 400;
-        strcpy(res.status_phrase, "Bad Request");
-        strcpy(res.header, "Content-Length");
-        res.length = 12;
-        sprintf(buff_res, "HTTP/1.1 %d %s\r\n%s: %ld\r\n\r\n", res.status_code,
-                res.status_phrase, res.header, res.length);
-        write(connfd, buff_res, strlen(buff_res));
-        write(connfd, "Bad Request\n", 12);
-        return;
-      }
-
-      Put(url, connfd, res, parser, offset);
-      return;
-    }
-
-    if (strcmp(method, "APPEND") == 0 | strcmp(method, "append") == 0) {
-
-      int offset;
-
-      if (sscanf(parser, "%s /%s %s %s %ld %n", method, url, version,
-                 res.header, &res.length, &offset) != 5) {
-
-        res.status_code = 400;
-        strcpy(res.status_phrase, "Bad Request");
-        strcpy(res.header, "Content-Length");
-        res.length = 12;
-        sprintf(buff_res, "HTTP/1.1 %d %s\r\n%s: %ld\r\n\r\n", res.status_code,
-                res.status_phrase, res.header, res.length);
-        write(connfd, buff_res, strlen(buff_res));
-        write(connfd, "Bad Request\n", 12);
-        return;
-      }
-
-      Append(url, connfd, res, parser, offset);
-      return;
-    }
-
-    else {
-      res.status_code = 500;
-      strcpy(res.status_phrase, "Not Implemented");
-      strcpy(res.header, "Content-Length");
-      res.length = 16;
-      sprintf(buff_res, "HTTP/1.1 %d %s\r\n%s: %ld\r\n\r\n", res.status_code,
-              res.status_phrase, res.header, res.length);
-      write(connfd, buff_res, strlen(buff_res));
-      write(connfd, "Not Implemented\n", 16);
-      return;
-    }
+    res.status_code = 500;
+    strcpy(res.status_phrase, "Not Implemented");
+    strcpy(res.header, "Content-Length");
+    res.length = 16;
+    sprintf(buff_res, "HTTP/1.1 %d %s\r\n%s: %ld\r\n\r\n", res.status_code,
+            res.status_phrase, res.header, res.length);
+    write(connfd, buff_res, strlen(buff_res));
+    write(connfd, "Not Implemented\n", 16);
+    return;
   }
 }
 int main(int argc, char *argv[]) {
