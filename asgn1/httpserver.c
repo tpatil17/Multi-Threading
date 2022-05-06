@@ -129,6 +129,19 @@ struct Request process_request(char read_buffer[], int connfd) {
 
     }
 
+    if(strcmp(req.version, "HTTP/1.1") != 0){
+
+      strcpy(res.version, "HTTP/1.1");
+      res.status_code = 400;
+      strcpy(res.status_phrase, "Bad Request");
+      strcpy(res.header, "Content-Length");
+      res.length = 12;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+            res.status_phrase, res.header, res.length);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "Bad Request\n", 12);
+    }
+
     else{
       strcpy(res.version, "HTTP/1.1");
       res.status_code = 400;
@@ -141,6 +154,7 @@ struct Request process_request(char read_buffer[], int connfd) {
       write(connfd, "Bad Request\n", 12);
 
     }
+
     req.er_flg = 1;
     
     return req;
@@ -157,6 +171,24 @@ struct Request process_request(char read_buffer[], int connfd) {
     sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
 
     if (strcmp(req.header, "") == 0 && strcmp(req.value, "") == 0) {
+
+      if(ctr == 0){
+
+        strcpy(res.version, "HTTP/1.1");
+        res.status_code = 400;
+        strcpy(res.status_phrase, "Bad Request");
+        strcpy(res.header, "Content-Length");
+        res.length = 12;
+        sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+              res.status_phrase, res.header, res.length);
+        write(connfd, buffer, strlen(buffer));
+        write(connfd, "Bad Request\n", 12);
+
+        req.er_flg = 1;
+
+        return req;
+        
+      }
 
       break;
     }
@@ -185,6 +217,24 @@ struct Request process_request(char read_buffer[], int connfd) {
     
     }
 
+    if(strcmp(req.header, "") == 0){
+
+      strcpy(res.version, "HTTP/1.1");
+      res.status_code = 400;
+      strcpy(res.status_phrase, "Bad Request");
+      strcpy(res.header, "Content-Length");
+      res.length = 12;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
+            res.status_phrase, res.header, res.length);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "Bad Request\n", 12);
+
+      req.er_flg  = 1 ;
+
+      return req;
+
+    }
+
     strcpy(req.header, "");
 
     strcpy(req.value, "");
@@ -196,7 +246,6 @@ struct Request process_request(char read_buffer[], int connfd) {
     ctr += 1;
   }
 
-  
 
   strcpy(req.header, perm_header);
 
