@@ -76,6 +76,8 @@ struct Request {
   int offset;
 
   int er_flg;
+
+  int size;
 };
 
 // *********************** Request Processing *********************
@@ -83,6 +85,7 @@ struct Request {
 struct Request process_request(char read_buffer[], int connfd) {
 
   char buffer[1024];
+
   struct Request req;
 
   struct Response res;
@@ -100,6 +103,10 @@ struct Request process_request(char read_buffer[], int connfd) {
   int check;
 
   req.er_flg = 0;
+
+  int ctr = 0;
+
+  req.size = strlen(read_buffer);
 
   token = strtok(read_buffer, delim);
 
@@ -175,7 +182,9 @@ struct Request process_request(char read_buffer[], int connfd) {
       }
 
       strcpy(perm_val, req.value);
+    
     }
+
     strcpy(req.header, "");
 
     strcpy(req.value, "");
@@ -184,13 +193,21 @@ struct Request process_request(char read_buffer[], int connfd) {
 
     total += req.offset;
 
+    ctr += 1;
   }
+
+  
 
   strcpy(req.header, perm_header);
 
   strcpy(req.value, perm_val);
 
-  req.offset = total + 4;
+  req.offset = total + 8;
+
+  if(ctr == 1){
+
+    req.offset -= 4;
+  }
 
   req.length = atoi(perm_val);
 
@@ -266,7 +283,7 @@ void Get(struct Request req, int connfd, struct Response res) {
 
   res.length = ln.st_size;
 
-  sprintf(resp_buf, "%s %d %s\r\n%s:%ld\r\n\r\n", res.version, res.status_code,
+  sprintf(resp_buf, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version, res.status_code,
           res.status_phrase, res.header, res.length);
 
   write(connfd, resp_buf, strlen(resp_buf));
@@ -383,18 +400,20 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
     close(fd);
   }
 
+
   else {
-    int total;
 
-    write(fd, parser + req.offset, strlen(parser) - req.offset);
+    int total = 0;
 
-    total = strlen(parser) - req.offset;
+    write(fd, parser + req.offset, req.size - req.offset);
+
+    total = req.size - req.offset;
 
     while ((bytes = read(connfd, parser, 4096)) > 0) {
 
       total += bytes;
 
-      if (limit >= total) {
+      if (limit > total) {
 
         if (write(fd, parser, bytes) == -1) {
 
@@ -410,9 +429,11 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           close(fd);
           return;
         }
+ 
       }
+    
 
-      else {
+      if(total >= limit){
 
         if (write(fd, parser, bytes - (total - limit)) == -1) {
 
@@ -428,6 +449,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           close(fd);
           return;
         }
+
         break;
       }
     }
@@ -543,17 +565,17 @@ void Append(struct Request req, int connfd, struct Response res,
     close(fd);
 
   } else {
-    int total;
+    int total =0 ;
 
-    write(fd, parser + req.offset, strlen(parser) - req.offset);
+    write(fd, parser + req.offset, req.size - req.offset);
 
-    total = strlen(parser) - req.offset;
+    total = req.size - req.offset;
 
     while ((bytes = read(connfd, parser, 4096)) > 0) {
 
       total += bytes;
 
-      if (limit >= total) {
+      if (limit > total) {
         if (write(fd, parser, bytes) == -1) {
 
           res.status_code = 500;
@@ -632,7 +654,6 @@ void handle_connection(int connfd) {
   read(connfd, parser, 4096);
 
   req = process_request(parser, connfd);
-
 
   if (req.er_flg == 1) {
 
