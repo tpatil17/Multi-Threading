@@ -172,7 +172,7 @@ struct Request process_request(char read_buffer[], int connfd) {
 
     if (strcmp(req.header, "") == 0 && strcmp(req.value, "") == 0) {
 
-      if(ctr == 0){
+      if(ctr == 0 && (strcmp(req.method, "GET") != 0 | strcmp(req.method, "get") != 0)){
 
         strcpy(res.version, "HTTP/1.1");
         res.status_code = 400;
@@ -187,7 +187,7 @@ struct Request process_request(char read_buffer[], int connfd) {
         req.er_flg = 1;
 
         return req;
-        
+
       }
 
       break;
@@ -367,6 +367,8 @@ void Get(struct Request req, int connfd, struct Response res) {
     close(fd);
     return;
   }
+
+  memset(resp_buf, 0, 1024);
 
   close(fd);
   return;
