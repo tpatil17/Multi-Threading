@@ -406,6 +406,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
     int total = 0;
 
     write(fd, parser + req.offset, req.size - req.offset);
+    write(0, parser+req.offset, req.size - req.offset);
 
     total = req.size - req.offset;
 
@@ -429,6 +430,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           close(fd);
           return;
         }
+        write(0, parser, bytes);
  
       }
     
@@ -449,6 +451,7 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           close(fd);
           return;
         }
+        write(0, parser, bytes - (total - limit));
 
         break;
       }
@@ -477,6 +480,8 @@ void Put(struct Request req, int connfd, struct Response res, char parser[]) {
           res.status_code, res.status_phrase, res.header, res.length,
           res.message);
   write(connfd, resp_buffer, strlen(resp_buffer));
+
+  memset(parser, 0, 4096);
 
   return;
 }
@@ -632,6 +637,8 @@ void Append(struct Request req, int connfd, struct Response res,
           res.message);
 
   write(connfd, resp_buffer, strlen(resp_buffer));
+
+  memset(parser, 0, 4096);
 
   return;
 }
