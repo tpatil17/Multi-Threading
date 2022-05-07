@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -102,6 +103,16 @@ struct Request process_request(char read_buffer[], int connfd) {
 
   struct Request req;
 
+  memset(req.method, 0, 10);
+
+  memset(req.uri, 0, 19);
+
+  memset(req.value, 0, 10);
+
+  memset(req.version, 0, 15);
+
+  memset(req.header, 0, 50);
+
   struct Response res;
 
   const char delim[2] = "\n";
@@ -180,6 +191,30 @@ struct Request process_request(char read_buffer[], int connfd) {
 
     sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
 
+    char temp_1[25], temp_2[25], temp_3[25];
+
+    if (sscanf(buffer, "%s %s %s", temp_1, temp_2, temp_3) == 3) {
+
+      strcpy(res.version, "HTTP/1.1");
+      res.status_code = 400;
+      strcpy(res.status_phrase, "Bad Request");
+      strcpy(res.header, "Content-Length");
+      res.length = 12;
+      sprintf(buffer, "%s %d %s\r\n%s: %ld\r\n\r\n", res.version,
+              res.status_code, res.status_phrase, res.header, res.length);
+      write(connfd, buffer, strlen(buffer));
+      write(connfd, "Bad Request\n", 12);
+
+      req.er_flg = 1;
+
+      memset(buffer, 0, 1024);
+      memset(temp_1, 0, 25);
+      memset(temp_2, 0, 25);
+      memset(temp_3, 0, 25);
+
+      return req;
+    }
+
     if (strcmp(req.header, "") == 0 && strcmp(req.value, "") == 0) {
 
       if (ctr == 0 &&
@@ -208,7 +243,35 @@ struct Request process_request(char read_buffer[], int connfd) {
 
       strcpy(perm_header, req.header);
 
-      if (strcmp(req.value, "") == 0) {
+      char temp1[25], temp2[25], temp3[25];
+
+      int bad_flag = 0;
+
+      if (sscanf(buffer, "%s %s %s", temp1, temp2, temp3) == 3) {
+
+        bad_flag = 1;
+
+        memset(temp1, 0, 25);
+        memset(temp2, 0, 25);
+        memset(temp3, 0, 25);
+      }
+
+      int val_ln = 0;
+
+      val_ln = strlen(req.value);
+
+      int i;
+
+      for (i = 0; i < val_ln; i++) {
+
+        if (!isdigit(req.value[i])) {
+
+          bad_flag = 1;
+          break;
+        }
+      }
+
+      if (strcmp(req.value, "") == 0 | bad_flag == 1) {
         strcpy(res.version, "HTTP/1.1");
         res.status_code = 400;
         strcpy(res.status_phrase, "Bad Request");
