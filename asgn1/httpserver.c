@@ -64,13 +64,13 @@ struct Response {
 struct Request {
   char method[10];
 
-  char uri[19];
+  char uri[64];
 
   char version[25];
 
   char header[50];
 
-  char value[10];
+  char value[50];
 
   int length;
 
@@ -85,9 +85,9 @@ void refresh(struct Request req) {
 
   memset(req.version, 0, 25);
 
-  memset(req.value, 0, 10);
+  memset(req.value, 0, 50);
 
-  memset(req.uri, 0, 19);
+  memset(req.uri, 0, 64);
 
   memset(req.method, 0, 10);
 
@@ -105,9 +105,9 @@ struct Request process_request(char read_buffer[], int connfd) {
 
   memset(req.method, 0, 10);
 
-  memset(req.uri, 0, 19);
+  memset(req.uri, 0, 64);
 
-  memset(req.value, 0, 10);
+  memset(req.value, 0, 50);
 
   memset(req.version, 0, 15);
 
@@ -141,7 +141,7 @@ struct Request process_request(char read_buffer[], int connfd) {
                       &req.offset)) != 3) {
 
     memset(req.version, 0, 25);
-    memset(req.uri, 0, 19);
+    memset(req.uri, 0, 64);
     memset(req.method, 0, 10);
 
     sscanf(buffer, "%s %s %s", req.method, req.uri, req.version);
