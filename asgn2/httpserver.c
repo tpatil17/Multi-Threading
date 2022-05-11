@@ -99,6 +99,8 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
     char buffer[1024];
 
+    memset(buffer, 0, sizeof(buffer));
+
     struct Request req;
 
     refresh_req(&req);
@@ -390,6 +392,8 @@ struct Response Get(struct Request req, int connfd) {
 
   char resp_buf[1024];
 
+  memset(resp_buf, 0, sizeof(resp_buf));
+
   struct Response res;
 
   refresh_res(&res);
@@ -536,6 +540,8 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
   limit = res.length;
 
   char resp_buffer[1024];
+
+  memset(resp_buffer, 0, sizeof(resp_buffer));
 
   struct stat ln;
 
@@ -725,6 +731,8 @@ struct Response Append(struct Request req, int connfd,
   struct stat ln;
 
   char resp_buffer[1024];
+
+  memset(resp_buffer, 0, sizeof(resp_buffer));
 
   if (access(req.uri, F_OK) != 0) {
 
@@ -930,6 +938,8 @@ static int create_listen_socket(uint16_t port) {
 static void handle_connection(int connfd) {
 
     char buf[BUF_SIZE];
+
+    memset(buf, 0, BUF_SIZE);
 
     ssize_t bytes_read;
 
