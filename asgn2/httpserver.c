@@ -402,7 +402,7 @@ struct Response Get(struct Request req, int connfd) {
 
   int bytes_read;
 
-  struct stat ln;
+  struct stat ln = {0};
 
   stat(req.uri, &ln);
 
@@ -543,7 +543,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
   memset(resp_buffer, 0, sizeof(resp_buffer));
 
-  struct stat ln;
+  struct stat ln = {0};
 
   stat(req.uri, &ln);
 
@@ -728,7 +728,7 @@ struct Response Append(struct Request req, int connfd,
 
   limit = res.length;
 
-  struct stat ln;
+  struct stat ln = {0};
 
   char resp_buffer[1024];
 
