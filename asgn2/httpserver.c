@@ -1029,13 +1029,11 @@ static void handle_connection(int connfd) {
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
-      warnx("received SIGTERM");
-
-
-      
 
       fclose(logfile);
       exit(EXIT_SUCCESS);
+      signal(SIGTERM, SIG_DFL);
+
     }
 }
 
