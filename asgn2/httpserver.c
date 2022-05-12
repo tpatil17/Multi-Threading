@@ -1029,12 +1029,12 @@ static void handle_connection(int connfd) {
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
-
+      fflush(logfile);
       fclose(logfile);
       exit(EXIT_SUCCESS);
     }
     if (sig == SIGINT){
-
+      fflush(logfile);
       fclose(logfile);
       exit(EXIT_SUCCESS);
     }
