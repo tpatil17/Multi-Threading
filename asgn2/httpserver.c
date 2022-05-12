@@ -188,9 +188,9 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
         strcpy(buffer, token);
 
-        printf("%s\n", buffer);
-
         sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
+
+        printf("Header: <%s>,  Value : <%s>\n", req.header, req.value);
 
         char temp_1[25], temp_2[25], temp_3[25];
 
