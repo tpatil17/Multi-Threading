@@ -1037,13 +1037,6 @@ static void sigterm_handler(int sig) {
       fclose(logfile);
       exit(EXIT_SUCCESS);
     }
-
-    if (sig = SIGINT) {
-      warnx("recieved SIGINT");
-
-      fclose(logfile);
-      exit(EXIT_SUCCESS);
-    }
 }
 
 static void usage(char *exec) {
