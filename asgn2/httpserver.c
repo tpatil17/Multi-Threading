@@ -239,6 +239,8 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
         }
 
+        printf("Compare the header: <%s>\n", req.header);
+
         if( strcmp(req.header, "Request-Id:") == 0) {
 
           printf("Yes\n");
