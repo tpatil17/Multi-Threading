@@ -287,6 +287,7 @@ struct Request process_rquest(char read_buffer[], int connfd) {
             }
 
             req.request_id = atoi(req.value);
+            printf("%d\n", req.request_id);
             
         }
 
