@@ -1032,8 +1032,11 @@ static void sigterm_handler(int sig) {
 
       fclose(logfile);
       exit(EXIT_SUCCESS);
-      signal(SIGTERM, SIG_DFL);
+    }
+    if (sig == SIGINT){
 
+      fclose(logfile);
+      exit(EXIT_SUCCESS);
     }
 }
 
@@ -1077,6 +1080,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGTERM, sigterm_handler);
+    signal(SIGINT, sigterm_handler);
 
     int listenfd = create_listen_socket(port);
     //LOG("port=%" PRIu16 ", threads=%d\n", port, threads);
