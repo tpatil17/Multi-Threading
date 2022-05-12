@@ -238,7 +238,7 @@ struct Request process_rquest(char read_buffer[], int connfd) {
         }
 
 
-        if( strcmp(req.header, "Request_Id:") == 0) {
+        if( strcmp(req.header, "Request-Id:") == 0) {
 
           
 
@@ -1029,9 +1029,20 @@ static void handle_connection(int connfd) {
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
-        warnx("received SIGTERM");
-        fclose(logfile);
-        exit(EXIT_SUCCESS);
+      warnx("received SIGTERM");
+
+
+      
+
+      fclose(logfile);
+      exit(EXIT_SUCCESS);
+    }
+
+    if (sig = SIGINT) {
+      warnx("recieved SIGINT");
+
+      fclose(logfile);
+      exit(EXIT_SUCCESS);
     }
 }
 
