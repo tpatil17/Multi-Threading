@@ -188,6 +188,8 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
         strcpy(buffer, token);
 
+        printf("%s\n", buffer);
+
         sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
 
         char temp_1[25], temp_2[25], temp_3[25];
@@ -238,6 +240,8 @@ struct Request process_rquest(char read_buffer[], int connfd) {
         }
 
         if( strcmp(req.header, "Request-Id:") == 0) {
+
+          printf("Yes\n");
 
             
             char temp1[25], temp2[25], temp3[25];
