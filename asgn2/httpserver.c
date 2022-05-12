@@ -190,8 +190,6 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
         sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
 
-        printf("Header: <%s>,  Value : <%s>\n", req.header, req.value);
-
         char temp_1[25], temp_2[25], temp_3[25];
 
         if (sscanf(buffer, "%s %s %s", temp_1, temp_2, temp_3) == 3) {
@@ -239,11 +237,10 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
         }
 
-        printf("Compare the header: <%s>\n", req.header);
 
         if( strcmp(req.header, "Request_Id:") == 0) {
 
-          printf("Yes\n");
+          
 
             
             char temp1[25], temp2[25], temp3[25];
@@ -293,7 +290,7 @@ struct Request process_rquest(char read_buffer[], int connfd) {
             }
 
             req.request_id = atoi(req.value);
-            printf("%d\n", req.request_id);
+
             
         }
 
