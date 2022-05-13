@@ -95,6 +95,13 @@ void refresh_res(struct Response *res){
     return;
 }
 
+void refresh_log(struct logbook *log){
+
+  memset(log, 0, sizeof(struct logbook));
+
+  return;
+}
+
 struct Request process_rquest(char read_buffer[], int connfd) {
 
     char buffer[1024];
@@ -539,6 +546,10 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
   int bytes;
 
+  char *ptr;
+
+  ptr = NULL;
+
   struct Response res;
 
   refresh_res(&res);
@@ -556,6 +567,8 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
   memset(resp_buffer, 0, sizeof(resp_buffer));
 
   struct stat ln = {0};
+
+  ptr = parser + req.offset;
 
   stat(req.uri, &ln);
 
@@ -620,7 +633,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
   }
 
   if (limit < (4096 - req.offset)) {
-    write(fd, parser + req.offset, limit);
+    write(fd, ptr, limit);
     close(fd);
   }
 
@@ -628,7 +641,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
     int total = 0;
 
-    write(fd, parser + req.offset, req.size - req.offset);
+    write(fd, ptr, req.size - req.offset);
 
     total = req.size - req.offset;
 
@@ -728,6 +741,8 @@ struct Response Append(struct Request req, int connfd,
 
   int bytes;
 
+  char *ptr;
+
   struct Response res;
 
   refresh_res(&res);
@@ -745,6 +760,8 @@ struct Response Append(struct Request req, int connfd,
   char resp_buffer[1024];
 
   memset(resp_buffer, 0, sizeof(resp_buffer));
+
+  ptr = parser + req.offset;
 
   if (access(req.uri, F_OK) != 0) {
 
@@ -815,13 +832,13 @@ struct Response Append(struct Request req, int connfd,
   strcpy(res.message, "OK\n");
 
   if (limit < (4096 - req.offset)) {
-    write(fd, parser + req.offset, limit);
+    write(fd, ptr, limit);
     close(fd);
 
   } else {
     int total = 0;
 
-    write(fd, parser + req.offset, req.size - req.offset);
+    write(fd, ptr, req.size - req.offset);
 
     total = req.size - req.offset;
 
@@ -957,9 +974,15 @@ static void handle_connection(int connfd) {
 
     struct Request req;
 
+    refresh_req(&req);
+
     struct Response res_return;
 
+    refresh_res(&res_return);
+
     struct logbook data;
+
+    refresh_log(&data);
 
     
     do {
@@ -973,7 +996,8 @@ static void handle_connection(int connfd) {
 
         if(req.er_flg == 2){
 
- 
+          memset(buf, 0, sizeof(buf));
+          
           return;
         }
 
