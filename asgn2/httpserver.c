@@ -513,6 +513,7 @@ struct Response Get(struct Request req, int connfd) {
 
       return res;
     }
+    memset(resp_buf, 0, sizeof(resp_buf));
   }
 
   if (bytes_read == -1) {
@@ -641,7 +642,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
     int total = 0;
 
-    write(fd, ptr, req.size - req.offset);
+    write(fd, ptr, sizeof(ptr));
 
     total = req.size - req.offset;
 
@@ -696,6 +697,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
         break;
       }
+      memset(parser, 0, 4096);
     }
 
     if (bytes == -1) {
@@ -838,7 +840,7 @@ struct Response Append(struct Request req, int connfd,
   } else {
     int total = 0;
 
-    write(fd, ptr, req.size - req.offset);
+    write(fd, ptr, sizeof(ptr));
 
     total = req.size - req.offset;
 
@@ -884,6 +886,7 @@ struct Response Append(struct Request req, int connfd,
         }
         break;
       }
+      memset(parser, 0, 4096);
     }
     if (bytes == -1) {
       res.status_code = 500;
@@ -901,6 +904,8 @@ struct Response Append(struct Request req, int connfd,
 
       return res;
     }
+
+    memset(parser, 0, 4096);
 
     close(fd);
   }
@@ -970,7 +975,7 @@ static void handle_connection(int connfd) {
 
     memset(buf, 0, BUF_SIZE);
 
-    ssize_t bytes_read;
+    ssize_t bytes_read = 0;
 
     struct Request req;
 
