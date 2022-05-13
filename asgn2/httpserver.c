@@ -133,6 +133,14 @@ struct Request process_rquest(char read_buffer[], int connfd) {
 
     token = strtok_r(read_buffer, delim, &context);
 
+    if( token == NULL){
+
+      req.er_flg = 2;
+
+      return req;
+    }
+
+
     strcpy(buffer, token);
 
     // check for the valid input format
@@ -962,6 +970,12 @@ static void handle_connection(int connfd) {
         }
 
         req = process_rquest(buf, connfd);
+
+        if(req.er_flg == 2){
+
+ 
+          return;
+        }
 
         if (req.er_flg == 1) {
 
