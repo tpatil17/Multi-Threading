@@ -138,7 +138,7 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
     req.size = strlen(read_buffer);
 
-    printf("%s\n", req.size);
+    printf("%d\n", req.size);
 
     token = strtok_r(read_buffer, delim, &context);
 
