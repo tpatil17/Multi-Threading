@@ -102,7 +102,7 @@ void refresh_log(struct logbook *log){
   return;
 }
 
-struct Request process_rquest(char read_buffer[], int connfd) {
+struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
     char buffer[1024];
 
@@ -137,6 +137,8 @@ struct Request process_rquest(char read_buffer[], int connfd) {
     req.request_id = 0;
 
     req.size = strlen(read_buffer);
+
+    printf("%s\n", req.size);
 
     token = strtok_r(read_buffer, delim, &context);
 
@@ -993,11 +995,12 @@ static void handle_connection(int connfd) {
     do {
         // Read from connfd until EOF or error.
         bytes_read = read(connfd, buf, sizeof(buf));
+        write(0, buf, sizeof(buf));
         if (bytes_read <= 0) {
             return;
         }
 
-        req = process_rquest(buf, connfd);
+        req = process_rquest(buf, connfd, bytes_read);
 
         if(req.er_flg == 2){
 
