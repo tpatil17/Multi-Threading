@@ -635,6 +635,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
   if (limit < (4096 - req.offset)) {
     write(fd, ptr, limit);
+    write(0, ptr, limit);
     close(fd);
   }
 
@@ -643,6 +644,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
     int total = 0;
 
     write(fd, ptr, sizeof(ptr));
+    write(0, ptr, sizeof(ptr));
 
     total = req.size - req.offset;
 
@@ -652,7 +654,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
       if (limit > total) {
 
-        if (write(fd, parser, bytes) == -1) {
+        if (write(fd, parser, bytes) == -1 || write(0, parser, bytes)) {
 
           res.status_code = 500;
           strcpy(res.status_phrase, "Internal Server Error");
@@ -667,15 +669,13 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
 
           memset(resp_buffer, 0, 1024);
 
-
-
           return res;
         }
       }
 
       if (total >= limit) {
 
-        if (write(fd, parser, bytes - (total - limit)) == -1) {
+        if (write(fd, parser, bytes - (total - limit)) == -1 || write(0, parser, bytes - (total - limit)) == -1 ) {
 
           res.status_code = 500;
           strcpy(res.status_phrase, "Internal Server Error");
@@ -993,7 +993,7 @@ static void handle_connection(int connfd) {
     do {
         // Read from connfd until EOF or error.
         bytes_read = read(connfd, buf, sizeof(buf));
-        if (bytes_read < 0) {
+        if (bytes_read <= 0) {
             return;
         }
 
@@ -1066,7 +1066,7 @@ static void handle_connection(int connfd) {
 
         }
 
-
+    memset(buf, 0, BUF_SIZE);
   } while (bytes_read > 0);
 }
 
