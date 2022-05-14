@@ -136,12 +136,12 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
     req.request_id = 0;
 
-    req.size = strlen(read_buffer);
+    req.size = bytes_read;
 
     int temp = bytes_read;
 
     temp ++;
-     
+
 
     printf("%d\n", req.size);
 
