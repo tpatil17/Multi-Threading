@@ -221,7 +221,11 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
         sscanf(buffer, "%s %s %n", req.header, req.value, &req.offset);
 
-        char temp_1[25], temp_2[25], temp_3[25];
+        char temp_1[125], temp_2[125], temp_3[125];
+
+        memset(temp_1, 0, 125);
+        memset(temp_1, 0, 125);
+        memset(temp_1, 0, 125);
 
         if (sscanf(buffer, "%s %s %s", temp_1, temp_2, temp_3) == 3) {
 
@@ -238,9 +242,9 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
             req.er_flg = 1;
 
             memset(buffer, 0, 1024);
-            memset(temp_1, 0, 25);
-            memset(temp_2, 0, 25);
-            memset(temp_3, 0, 25);
+            memset(temp_1, 0, 125);
+            memset(temp_2, 0, 125);
+            memset(temp_3, 0, 125);
 
             return req;
         }
@@ -277,7 +281,11 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
           
 
             
-            char temp1[25], temp2[25], temp3[25];
+            char temp1[125], temp2[125], temp3[125];
+
+            memset(temp1, 0, 125);
+            memset(temp3, 0, 125);
+            memset(temp2, 0, 125);
 
             int bad_flag = 0;
 
@@ -285,9 +293,9 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
                 bad_flag = 1;
 
-                memset(temp1, 0, 25);
-                memset(temp2, 0, 25);
-                memset(temp3, 0, 25);
+                memset(temp1, 0, 125);
+                memset(temp2, 0, 125);
+                memset(temp3, 0, 125);
             }
 
             int val_ln = 0;
@@ -335,7 +343,11 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
             strcpy(header_buf, req.header);
 
-            char temp1[25], temp2[25], temp3[25];
+            char temp1[125], temp2[125], temp3[125];
+
+            memset(temp1, 0, 125);
+            memset(temp2, 0, 125);
+            memset(temp3, 0, 125);
 
             int bad_flag = 0;
 
@@ -343,9 +355,9 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
             bad_flag = 1;
 
-            memset(temp1, 0, 25);
-            memset(temp2, 0, 25);
-            memset(temp3, 0, 25);
+            memset(temp1, 0, 125);
+            memset(temp2, 0, 125);
+            memset(temp3, 0, 125);
             }
 
             int val_ln = 0;
