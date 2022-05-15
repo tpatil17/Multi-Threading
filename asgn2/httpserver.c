@@ -126,7 +126,11 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
     char *token;
 
+    token = NULL;
+
     char *context;
+
+    context = NULL;
 
     int total = 0;
 
@@ -135,7 +139,11 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
     char header_buf[30];
 
+    memset(header_buf ,0, 30);
+
     char val_buf[30];
+
+    memset(val_buf, 0, 30);
 
     int check = 0;
 
