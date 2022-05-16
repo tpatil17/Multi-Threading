@@ -474,7 +474,11 @@ struct Response Get(struct Request req, int connfd) {
 
   int fd;
 
+  fd = 0;
+
   int bytes_read;
+
+  bytes_read = 0;
 
   struct stat ln = {0};
 
@@ -547,19 +551,15 @@ struct Response Get(struct Request req, int connfd) {
   res.status_code = 200;
   strcpy(res.status_phrase, "OK");
   strcpy(res.header, "Content-Length:");
-  strcpy(res.message, "OK\n");
-  res.length = 3;
-  sprintf(resp_buf, "%s %d %s\r\n%s %ld\r\n\r\n%s", res.version, res.status_code, res.status_phrase, res.header, res.length, res.message);
+  res.length = ln.st_size;
+  sprintf(resp_buf, "%s %d %s\r\n%s %ld\r\n\r\n", res.version, res.status_code, res.status_phrase, res.header, res.length);
 
   write(connfd, resp_buf, strlen(resp_buf));
 
   while ((bytes_read = read(fd, resp_buf, 1024)) > 0) {
 
-    printf("bytes read: %d\n", bytes_read);
 
     if ((write(connfd, resp_buf, bytes_read)) == -1) {
-
-      printf("the errno: %s\n", strerror(errno));
 
       res.status_code = 500;
       strcpy(res.status_phrase, "Internal Server Error");
