@@ -1072,6 +1072,8 @@ static void handle_connection(int connfd) {
     do {
         // Read from connfd until EOF or error.
         bytes_read = read(connfd, buf, sizeof(buf));
+
+        buf[bytes_read] = '\0'
       
         if (bytes_read <= 0) {
             return;
