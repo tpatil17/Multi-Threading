@@ -1009,9 +1009,9 @@ void enter_log(struct logbook data, FILE *l_file ){
 
     memset(buf, 0, sizeof(buf));
 
-    sprintf(buf, "%s,/%s,%d,%d\n", data.oper, data.uri, data.status_code, data.request_id);
+    fprintf(l_file , "%s,/%s,%d,%d\n", data.oper, data.uri, data.status_code, data.request_id);
 
-    fwrite(buf, 1, strlen(buf),l_file);
+    //fwrite(buf, 1, strlen(buf),l_file);
 
     fflush(l_file);
 
