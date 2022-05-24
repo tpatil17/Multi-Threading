@@ -25,6 +25,7 @@
 
 static FILE *logfile;
 #define LOG(...) fprintf(logfile, __VA_ARGS__);
+static void handle_connection(int connfd);
 
 // Converts a string to an 16 bits unsigned integer.
 // Returns 0 if the string is malformed or out of the range.
@@ -122,7 +123,7 @@ typedef struct orders {
 
 // Declarations for multi threading and thread-pooling
 
-orders requests[1024];
+orders requests[1024]; // queue of requests
 int count = 0;
 
 void add_to_queue(orders req){          // adds the request to a que
@@ -167,7 +168,7 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
         pthread_mutex_unlock(&mutexQueue);
        
-        execute_task(&req);
+        handle_connection(req.conn);
 
     }
 
@@ -1331,6 +1332,7 @@ int main(int argc, char *argv[]) {
         //close(connfd);
     }
 
+// doesnt matter ------------------------------
     for(i = 0; i< threads; i++){                 // Join the threads / or exectue finish execution at same time.
         if(pthread_join(th[i], NULL) != 0){
             return 2;
