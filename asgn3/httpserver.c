@@ -1245,7 +1245,7 @@ static void handle_connection(int connfd) {
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
-      int i;
+      
       pthread_exit(NULL);
    
       pthread_mutex_destroy(&mutexQueue);
