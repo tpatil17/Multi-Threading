@@ -168,11 +168,11 @@ void* start_thread(){     // responsible for giving threads requests if availabl
         printf("the count after executing the first one: %d\n", count);
 
         while(count == 0){
-            printf("waiting\n")
+            printf("waiting\n");
             pthread_cond_wait(&condQueue, &mutexQueue);
         }
         printf("done waiting\n");
-        
+
         req = requests[0];
 
         int i;
