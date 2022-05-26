@@ -163,7 +163,7 @@ void* start_thread(){     // responsible for giving threads requests if availabl
         int req;
 
         
-        pthread_mutex_trylock(&mutexQueue);
+        pthread_mutex_lock(&mutexQueue);
 
         printf("the count after executing the first one: %d\n", count);
 
