@@ -1245,6 +1245,8 @@ static void handle_connection(int connfd) {
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
+      int i;
+      pthread_exit(NULL);
    
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1253,6 +1255,8 @@ static void sigterm_handler(int sig) {
       exit(EXIT_SUCCESS);
     }
     if (sig == SIGINT){
+
+      pthread_exit(NULL);
       
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1363,9 +1367,9 @@ int main(int argc, char *argv[]) {
     }
 
 // doesnt matter ------------------------------
-    for(i = 0; i< threads; i++){                 // Join the threads / or exectue finish execution at same time.
-        pthread_exit(NULL);
-    }
+    //for(i = 0; i< threads; i++){                 // Join the threads / or exectue finish execution at same time.
+      //  pthread_exit(NULL);
+    
 
 
     return EXIT_SUCCESS;
