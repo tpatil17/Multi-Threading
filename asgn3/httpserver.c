@@ -152,11 +152,11 @@ void execute_task(orders *req){
 
 void* start_thread(){     // responsible for giving threads requests if available
 
-    printf("print the threads: %d\n", pthread_self());
+    printf("print the threads: %lu\n", pthread_self());
 
     while(1){
 
-        printf("the thread is : %d\n", pthread_self());
+        printf("the thread is : %lu\n", pthread_self());
 
         int req;
 
