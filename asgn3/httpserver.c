@@ -161,7 +161,9 @@ void* start_thread(){     // responsible for giving threads requests if availabl
         int req;
 
         
-        pthread_mutex_lock(&mutexQueue);
+        pthread_mutex_trylock(&mutexQueue);
+
+        printf("the count after executing the first one: %d\n", count);
 
         while(count == 0){
             pthread_cond_wait(&condQueue, &mutexQueue);
@@ -1243,7 +1245,7 @@ static void handle_connection(int connfd) {
         }
 
     memset(buf, 0, BUF_SIZE);
-    printf("bro you infinite\n");
+
   } while (bytes_read > 0);
 }
 
