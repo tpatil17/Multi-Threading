@@ -188,7 +188,7 @@ void* start_thread(){     // responsible for giving threads requests if availabl
         handle_connection(req);
 
         printf("succesfully exectued handle_connection\n");
-        
+
 
     }
 
@@ -1243,6 +1243,7 @@ static void handle_connection(int connfd) {
         }
 
     memset(buf, 0, BUF_SIZE);
+    printf("bro you infinite\n");
   } while (bytes_read > 0);
 }
 
