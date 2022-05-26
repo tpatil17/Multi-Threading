@@ -139,16 +139,18 @@ void add_to_queue(int req){          // adds the request to a que
     printf("The count: %d\n", count);
 }
 
+/*
 void execute_task(orders *req){
-                                    // executes the request by calling handle request on that connfd
+                                    
     usleep(500000);
     printf("sleep for 5 sec\n");
     sleep(5);
 
     req->fun_pointer(req->conn);
-    close(req->conn);                 // close the connection after the request has been exectued
+    close(req->conn);               
 
 }
+*/
 
 void* start_thread(){     // responsible for giving threads requests if available
 
@@ -166,9 +168,11 @@ void* start_thread(){     // responsible for giving threads requests if availabl
         printf("the count after executing the first one: %d\n", count);
 
         while(count == 0){
+            printf("waiting\n")
             pthread_cond_wait(&condQueue, &mutexQueue);
         }
-
+        printf("done waiting\n");
+        
         req = requests[0];
 
         int i;
