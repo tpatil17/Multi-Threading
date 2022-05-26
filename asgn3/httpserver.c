@@ -152,7 +152,11 @@ void execute_task(orders *req){
 
 void* start_thread(){     // responsible for giving threads requests if available
 
+    printf("print the threads: %d\n", pthread_self());
+
     while(1){
+
+        printf("the thread is : %d\n", pthread_self());
 
         int req;
 
@@ -1164,7 +1168,7 @@ static void handle_connection(int connfd) {
         if (bytes_read <= 0) {
             return;
         }
-        
+
 
         req = process_rquest(buf, connfd, bytes_read);
 
@@ -1310,11 +1314,13 @@ int main(int argc, char *argv[]) {
     //LOG("port=%" PRIu16 ", threads=%d\n", port, threads);
 
     pthread_t th[threads]; //create a "threads" number of threads in a loop
+
     int i;
 
     pthread_mutex_init(&mutexQueue, NULL);
     pthread_cond_init(&condQueue, NULL);
     
+
 
 // start the threads 
     for(i = 0; i < threads; i++ ){
