@@ -187,6 +187,9 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
         handle_connection(req);
 
+        printf("succesfully exectued handle_connection\n");
+        
+
     }
 
 }
