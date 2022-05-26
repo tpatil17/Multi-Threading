@@ -123,19 +123,28 @@ typedef struct orders {
 
 // Declarations for multi threading and thread-pooling
 
-orders requests[1024]; // queue of requests
+//orders requests[1024]; // queue of requests
+
+int requests[1024];
+
 int count = 0;
 
-void add_to_queue(orders req){          // adds the request to a que
+void add_to_queue(int req){          // adds the request to a que
     pthread_mutex_lock(&mutexQueue);
     requests[count] = req;
     count++;
     pthread_mutex_unlock(&mutexQueue);
     pthread_cond_signal(&condQueue);
+    printf("added request\n");
+    printf("The count: %d\n", count);
 }
 
 void execute_task(orders *req){
                                     // executes the request by calling handle request on that connfd
+    usleep(500000);
+    printf("sleep for 5 sec\n");
+    sleep(5);
+
     req->fun_pointer(req->conn);
     close(req->conn);                 // close the connection after the request has been exectued
 
@@ -145,7 +154,7 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
     while(1){
 
-        orders req;
+        int req;
 
         
         pthread_mutex_lock(&mutexQueue);
@@ -158,17 +167,21 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
         int i;
 
-        for(i = 0; i < count -1; i ++){
+        for(i = 0; i < count -1; i ++){ // dequeue
 
             requests[i] = requests[i+1];
 
         }
 
+        printf("task assigned\n");
+        
         count--;
 
         pthread_mutex_unlock(&mutexQueue);
        
-        handle_connection(req.conn);
+        //execute_task(&req);
+
+        handle_connection(req);
 
     }
 
@@ -250,7 +263,6 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
         sscanf(buffer, "%s %s %s", req.method, req.uri, req.version);
 
         if (strcmp(req.uri, "/") == 0 && strcmp(req.version, "HTTP/1.1") == 0) {
-
             strcpy(res.version, "HTTP/1.1");
             res.status_code = 500;
             strcpy(res.status_phrase, "Internal Server Error");
@@ -1120,6 +1132,9 @@ static int create_listen_socket(uint16_t port) {
 
 static void handle_connection(int connfd) {
 
+  //printf("sleeping for 7 seconds\n");
+  //sleep(7);
+
     char buf[BUF_SIZE];
 
     memset(buf, 0, BUF_SIZE);
@@ -1149,6 +1164,7 @@ static void handle_connection(int connfd) {
         if (bytes_read <= 0) {
             return;
         }
+        
 
         req = process_rquest(buf, connfd, bytes_read);
 
@@ -1306,12 +1322,16 @@ int main(int argc, char *argv[]) {
             perror("Failed to create thread\n");
             return 1;
         }
+        printf("thread created\n");
 
     }   
 
-    for (;;) {
+    printf("the task count before add: %d\n", count);
 
-        orders req;
+    for (;;) {
+        
+        //orders req;
+        int req_num;
 
         int connfd = accept(listenfd, NULL, NULL); //
         if (connfd < 0) {
@@ -1319,13 +1339,17 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        req.fun_pointer = &handle_connection;
+        //req.fun_pointer = &handle_connection;
 
-        req.conn = connfd;
+        //req.conn = connfd;
 
+        req_num = connfd;
 
-       
-        add_to_queue(req); // add the request to queue
+        printf("the connection : %d\n", connfd);
+        
+        add_to_queue(req_num); // add the request to queue
+
+        printf("the count of requests: %d\n", count);
         
 
         //handle_connection(connfd);
@@ -1334,9 +1358,7 @@ int main(int argc, char *argv[]) {
 
 // doesnt matter ------------------------------
     for(i = 0; i< threads; i++){                 // Join the threads / or exectue finish execution at same time.
-        if(pthread_join(th[i], NULL) != 0){
-            return 2;
-        }
+        pthread_exit(NULL);
     }
 
 
