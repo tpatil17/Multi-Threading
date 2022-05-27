@@ -1260,11 +1260,7 @@ static void handle_connection(int connfd) {
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
       
-      //pthread_exit(NULL);
-      int i;
-      for(i = 0; i < NUM_THREADS; i++){
-        pthread_join(ptr[i], NULL);
-      }
+      
    
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1274,11 +1270,7 @@ static void sigterm_handler(int sig) {
     }
     if (sig == SIGINT){
 
-      //pthread_exit(NULL);
-      int i;
-      for(i = 0; i < NUM_THREADS; i++){
-        pthread_join(ptr[i], NULL);
-      }
+
       
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1371,7 +1363,7 @@ int main(int argc, char *argv[]) {
         printf("loop is running\n");
         int connfd = accept(listenfd, NULL, NULL); 
         printf("Connection should be accepted\n");
-        
+
         if (connfd < 0) {
             warn("accept error");
             continue;
