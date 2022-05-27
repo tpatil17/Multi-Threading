@@ -13,14 +13,23 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <pthread.h>
+
+// also include -pthread flag in compiler
+
 
 
 #define OPTIONS              "t:l:"
 #define BUF_SIZE             4096
 #define DEFAULT_THREAD_COUNT 4
+int NUM_THREADS; // 
+
+pthread_t *ptr;
+
 
 static FILE *logfile;
 #define LOG(...) fprintf(logfile, __VA_ARGS__);
+static void handle_connection(int connfd);
 
 // Converts a string to an 16 bits unsigned integer.
 // Returns 0 if the string is malformed or out of the range.
@@ -32,7 +41,6 @@ static size_t strtouint16(char number[]) {
     }
     return num;
 }
-
 
 
 struct logbook {
@@ -105,6 +113,98 @@ void refresh_log(struct logbook *log){
 
   return;
 }
+
+pthread_mutex_t mutexQueue; // mutext lock
+pthread_cond_t condQueue;  // conditional variable
+
+typedef struct orders {
+  void (*fun_pointer)(int);
+
+  int conn;
+
+} orders;
+
+
+// Declarations for multi threading and thread-pooling
+
+//orders requests[1024]; // queue of requests
+
+int requests[1024];
+
+int count = 0;
+
+void add_to_queue(int req){          // adds the request to a que
+    pthread_mutex_lock(&mutexQueue);
+    requests[count] = req;
+    count++;
+    pthread_mutex_unlock(&mutexQueue);
+    pthread_cond_signal(&condQueue);
+    printf("added request\n");
+    printf("The count: %d\n", count);
+}
+
+/*
+void execute_task(orders *req){
+                                    
+    usleep(500000);
+    printf("sleep for 5 sec\n");
+    sleep(5);
+
+    req->fun_pointer(req->conn);
+    close(req->conn);               
+
+}
+*/
+
+void* start_thread(){     // responsible for giving threads requests if available
+
+    printf("print the threads: %lu\n", pthread_self());
+
+    while(1){
+
+        printf("the thread is : %lu\n", pthread_self());
+
+        int req;
+
+        
+        pthread_mutex_lock(&mutexQueue);
+
+        printf("the count after executing the first one: %d\n", count);
+
+        while(count == 0){
+            printf("waiting\n");
+            pthread_cond_wait(&condQueue, &mutexQueue);
+        }
+        printf("done waiting\n");
+
+        req = requests[0];
+
+        int i;
+
+        for(i = 0; i < count -1; i ++){ // dequeue
+
+            requests[i] = requests[i+1];
+
+        }
+
+        printf("task assigned\n");
+        
+        count--;
+
+        pthread_mutex_unlock(&mutexQueue);
+       
+        //execute_task(&req);
+
+        handle_connection(req);
+
+        printf("succesfully exectued handle_connection\n");
+
+         
+    }
+
+}
+
+
 
 struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
@@ -180,7 +280,6 @@ struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
         sscanf(buffer, "%s %s %s", req.method, req.uri, req.version);
 
         if (strcmp(req.uri, "/") == 0 && strcmp(req.version, "HTTP/1.1") == 0) {
-
             strcpy(res.version, "HTTP/1.1");
             res.status_code = 500;
             strcpy(res.status_phrase, "Internal Server Error");
@@ -1050,6 +1149,9 @@ static int create_listen_socket(uint16_t port) {
 
 static void handle_connection(int connfd) {
 
+  //printf("sleeping for 7 seconds\n");
+  //sleep(7);
+
     char buf[BUF_SIZE];
 
     memset(buf, 0, BUF_SIZE);
@@ -1068,8 +1170,9 @@ static void handle_connection(int connfd) {
 
     refresh_log(&data);
 
+
     
-    do {
+   // do {
         // Read from connfd until EOF or error.
         bytes_read = read(connfd, buf, sizeof(buf));
 
@@ -1078,6 +1181,7 @@ static void handle_connection(int connfd) {
         if (bytes_read <= 0) {
             return;
         }
+
 
         req = process_rquest(buf, connfd, bytes_read);
 
@@ -1149,16 +1253,27 @@ static void handle_connection(int connfd) {
         }
 
     memset(buf, 0, BUF_SIZE);
-  } while (bytes_read > 0);
+
+  //} while (bytes_read > 0);
 }
 
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
+      
+      
+   
+      pthread_mutex_destroy(&mutexQueue);
+      pthread_cond_destroy(&condQueue);
       fflush(logfile);
       fclose(logfile);
       exit(EXIT_SUCCESS);
     }
     if (sig == SIGINT){
+
+
+      
+      pthread_mutex_destroy(&mutexQueue);
+      pthread_cond_destroy(&condQueue);
       fflush(logfile);
       fclose(logfile);
       exit(EXIT_SUCCESS);
@@ -1169,7 +1284,12 @@ static void usage(char *exec) {
     fprintf(stderr, "usage: %s [-t threads] [-l logfile] <port>\n", exec);
 }
 
+
+// implement multi threading --------------------------
+
+
 int main(int argc, char *argv[]) {
+
     int opt = 0;
     int threads = DEFAULT_THREAD_COUNT;
     logfile = stderr;
@@ -1208,17 +1328,72 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, sigterm_handler);
 
     int listenfd = create_listen_socket(port);
+    
     //LOG("port=%" PRIu16 ", threads=%d\n", port, threads);
 
+    pthread_t th[threads]; //create a "threads" number of threads in a loop
+    ptr = th; 
+
+    int i;
+
+    pthread_mutex_init(&mutexQueue, NULL);
+    pthread_cond_init(&condQueue, NULL);
+    
+
+
+// start the threads 
+    for(i = 0; i < threads; i++ ){
+        if(pthread_create(&th[i], NULL, &start_thread, NULL) != 0){
+            perror("Failed to create thread\n");
+            return 1;
+        }
+        printf("thread created\n");
+
+    }   
+
+    NUM_THREADS = threads;
+
+    printf("the task count before add: %d\n", count);
+
     for (;;) {
-        int connfd = accept(listenfd, NULL, NULL);
+        
+        //orders req;
+        int req_num;
+
+        printf("loop is running\n");
+        int connfd = accept(listenfd, NULL, NULL); 
+        printf("Connection should be accepted\n");
+
         if (connfd < 0) {
             warn("accept error");
             continue;
         }
-        handle_connection(connfd);
-        close(connfd);
+
+        //req.fun_pointer = &handle_connection;
+
+        //req.conn = connfd;
+
+        req_num = connfd;
+
+        printf("the connection : %d\n", connfd);
+        
+        add_to_queue(req_num); // add the request to queue
+
+        printf("the count of requests: %d\n", count);
+
+
+        
+
+        //handle_connection(connfd);
+        //close(connfd);
+        
     }
+
+// doesnt matter ------------------------------
+    //for(i = 0; i< threads; i++){                 // Join the threads / or exectue finish execution at same time.
+      //  pthread_exit(NULL);
+    
+
 
     return EXIT_SUCCESS;
 }
