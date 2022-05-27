@@ -24,8 +24,6 @@
 #define DEFAULT_THREAD_COUNT 4
 int NUM_THREADS; // 
 
-pthread_t *ptr;
-
 
 static FILE *logfile;
 #define LOG(...) fprintf(logfile, __VA_ARGS__);
@@ -1260,6 +1258,7 @@ static void handle_connection(int connfd) {
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
       
+      pthread_exit(NULL);
       
    
       pthread_mutex_destroy(&mutexQueue);
@@ -1270,7 +1269,7 @@ static void sigterm_handler(int sig) {
     }
     if (sig == SIGINT){
 
-
+      pthread_exit(NULL);
       
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1332,7 +1331,7 @@ int main(int argc, char *argv[]) {
     //LOG("port=%" PRIu16 ", threads=%d\n", port, threads);
 
     pthread_t th[threads]; //create a "threads" number of threads in a loop
-    ptr = th; 
+
 
     int i;
 
