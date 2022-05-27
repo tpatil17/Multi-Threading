@@ -22,6 +22,10 @@
 #define OPTIONS              "t:l:"
 #define BUF_SIZE             4096
 #define DEFAULT_THREAD_COUNT 4
+int NUM_THREADS; // 
+
+pthread_t *ptr;
+
 
 static FILE *logfile;
 #define LOG(...) fprintf(logfile, __VA_ARGS__);
@@ -195,7 +199,7 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
         printf("succesfully exectued handle_connection\n");
 
-
+         
     }
 
 }
@@ -1256,7 +1260,11 @@ static void handle_connection(int connfd) {
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
       
-      pthread_exit(NULL);
+      //pthread_exit(NULL);
+      int i;
+      for(i = 0; i < NUM_THREADS; i++){
+        pthread_join(ptr[i], NULL);
+      }
    
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1266,7 +1274,11 @@ static void sigterm_handler(int sig) {
     }
     if (sig == SIGINT){
 
-      pthread_exit(NULL);
+      //pthread_exit(NULL);
+      int i;
+      for(i = 0; i < NUM_THREADS; i++){
+        pthread_join(ptr[i], NULL);
+      }
       
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1328,6 +1340,7 @@ int main(int argc, char *argv[]) {
     //LOG("port=%" PRIu16 ", threads=%d\n", port, threads);
 
     pthread_t th[threads]; //create a "threads" number of threads in a loop
+    ptr = th; 
 
     int i;
 
@@ -1345,6 +1358,8 @@ int main(int argc, char *argv[]) {
         printf("thread created\n");
 
     }   
+
+    NUM_THREADS = threads;
 
     printf("the task count before add: %d\n", count);
 
@@ -1370,10 +1385,13 @@ int main(int argc, char *argv[]) {
         add_to_queue(req_num); // add the request to queue
 
         printf("the count of requests: %d\n", count);
+
+
         
 
         //handle_connection(connfd);
         //close(connfd);
+        
     }
 
 // doesnt matter ------------------------------
