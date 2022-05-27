@@ -1368,7 +1368,10 @@ int main(int argc, char *argv[]) {
         //orders req;
         int req_num;
 
-        int connfd = accept(listenfd, NULL, NULL); //
+        printf("loop is running\n");
+        int connfd = accept(listenfd, NULL, NULL); 
+        printf("Connection should be accepted\n");
+        
         if (connfd < 0) {
             warn("accept error");
             continue;
