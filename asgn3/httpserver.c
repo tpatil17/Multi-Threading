@@ -23,6 +23,7 @@
 #define BUF_SIZE             4096
 #define DEFAULT_THREAD_COUNT 4
 int NUM_THREADS; // 
+pthread_t *ptr;
 
 
 static FILE *logfile;
@@ -1258,8 +1259,14 @@ static void handle_connection(int connfd) {
 static void sigterm_handler(int sig) {
     if (sig == SIGTERM) {
       
-      pthread_exit(NULL);
-      
+      int i;
+
+      for(i = 0; i < NUM_THREADS; i++){
+        printf("joining thread: %d\n", i);
+        pthread_join(ptr[i], NULL);
+        printf("%d thread is joined\n", i);
+      }
+      pthread_exit(NULL);      
    
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1268,6 +1275,14 @@ static void sigterm_handler(int sig) {
       exit(EXIT_SUCCESS);
     }
     if (sig == SIGINT){
+
+      int i;
+
+      for(i = 0; i < NUM_THREADS; i++){
+        printf("joining thread: %d\n", i);
+        pthread_join(ptr[i], NULL);
+        printf("%d thread is joined\n", i);
+      }
 
       pthread_exit(NULL);
       
@@ -1351,6 +1366,7 @@ int main(int argc, char *argv[]) {
     }   
 
     NUM_THREADS = threads;
+    ptr = th;
 
     printf("the task count before add: %d\n", count);
 
