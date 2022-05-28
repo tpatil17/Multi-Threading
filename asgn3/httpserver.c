@@ -1266,7 +1266,7 @@ static void sigterm_handler(int sig) {
         pthread_join(ptr[i], NULL);
         printf("%d thread is joined\n", i);
       }
-      pthread_exit(NULL);      
+      //pthread_exit(NULL);      
    
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
@@ -1284,7 +1284,7 @@ static void sigterm_handler(int sig) {
         printf("%d thread is joined\n", i);
       }
 
-      pthread_exit(NULL);
+      //pthread_exit(NULL);
       
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
