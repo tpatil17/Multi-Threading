@@ -210,7 +210,8 @@ void* start_thread(){     // responsible for giving threads requests if availabl
 
 struct Request process_rquest(char read_buffer[], int connfd, int bytes_read) {
 
- // printf("%s\n", read_buffer);
+  printf("%s\n", read_buffer);
+  printf("break\n");
    
 
     char buffer[1024];
