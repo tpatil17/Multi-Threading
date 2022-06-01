@@ -1307,11 +1307,13 @@ static void sigterm_handler(int sig) {
       }*/
 
       pthread_exit(NULL);
-      
+      printf("exiting\n");
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
+      printf("destruction done\n");
       fflush(logfile);
       fclose(logfile);
+      printf("closing successfull\n");
       exit(EXIT_SUCCESS);
     }
 }
