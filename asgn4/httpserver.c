@@ -26,8 +26,8 @@ int NUM_THREADS; //
 pthread_t *ptr;
 pthread_mutex_t mutexQueue; // mutext lock
 pthread_cond_t condQueue;  // conditional variable
-pthread_cond_t partial;
-pthread_mutex_t partial_lock;
+//pthread_cond_t partial;
+//pthread_mutex_t partial_lock;
 
 
 static FILE *logfile;
@@ -1196,7 +1196,7 @@ static void handle_connection(int connfd) {
           while(strcmp(buf + strlen(buf) - strlen("\r\n\r\n"),"\r\n\r\n") != 0){
             read(connfd, buf2, 4096);
             strcat(buf, buf2);
-            memste(buf2, 0, 4096);
+            memset(buf2, 0, 4096);
           }
           flag = 1; 
         }
