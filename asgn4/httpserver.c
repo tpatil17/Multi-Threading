@@ -1289,11 +1289,13 @@ static void sigterm_handler(int sig) {
         printf("%d thread is joined\n", i);
       }*/
       pthread_exit(NULL);      
-   
+      printf("Exit\n");
       pthread_mutex_destroy(&mutexQueue);
       pthread_cond_destroy(&condQueue);
+      printf("dystroyed\n");
       fflush(logfile);
       fclose(logfile);
+      printf("should exit\n");
       exit(EXIT_SUCCESS);
     }
     if (sig == SIGINT){
