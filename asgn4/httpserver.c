@@ -901,6 +901,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
   sprintf(resp_buffer, "%s %d %s\r\n%s: %ld\r\n\r\n%s", res.version,
           res.status_code, res.status_phrase, res.header, res.length,
           res.message);
+  printf("the connection: %d\n", connfd);
   write(connfd, resp_buffer, strlen(resp_buffer));
   write(1,resp_buffer, strlen(resp_buffer));
 
