@@ -902,6 +902,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
           res.status_code, res.status_phrase, res.header, res.length,
           res.message);
   write(connfd, resp_buffer, strlen(resp_buffer));
+  write(1,resp_buffer, strlen(resp_buffer));
 
   memset(resp_buffer, 0, 1024);
   memset(parser, 0, 4096);
