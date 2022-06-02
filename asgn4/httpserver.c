@@ -775,7 +775,7 @@ struct Response Put(struct Request req, int connfd, char parser[]) {
     fd = open(req.uri, O_WRONLY | O_TRUNC);
 
     if(fd == -1){
-      printf("error is : %lu\n", errno);
+      printf("error is : %d\n", errno);
     }
 
     res.status_code = 200;
